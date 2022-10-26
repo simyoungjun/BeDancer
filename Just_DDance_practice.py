@@ -28,7 +28,7 @@ class JustDDance():
     def __get_accumlate_acc(self):
         return self.__accumulate_acc
     def __save_dance_name(self):
-        self.__dance_name = input("누구의 무슨 춤?: 안유진 러브다이브 ")
+        self.__dance_name = input("누구의 무슨 춤? ex) 안유진 러브다이브 : ")
     def set_dance_name(self, s):
         self.__dance_name = s
         
@@ -154,20 +154,19 @@ class JustDDance():
             self.__draw_skeleton(user_image, coordinate_dance_pose)
             
             while(10):
-                
                 if current_time>1./FPS:
                     audio_frame, val = player.get_frame()
                     h_output = np.hstack((cv2.flip(dance_image, 1), user_image))
                     cv2.imshow("Just DDance!", h_output)
                     prev_time = time.time()
-                    
-                    
-                    
                     break
                 else:
                     current_time = time.time()-prev_time
-                    
-            if cv2.waitKey(1)>0 & 0xFF==ord("q"): break    
+                    print(current_time)
+            
+            if cv2.waitKey(1)==ord("q"):
+                break         
+               
                     
         player.close_player()
         user.release() 
@@ -256,9 +255,6 @@ def main():
     #         jd.extract_keypoints(isMirr=True, showExtract=True)
     # print("실행 중입니다! 잠시만 기다려주세요! (실행 중 q를 누르면 종료됩니다)")
     
-    # practice()
-
-        
     
     jd.set_dance_name('안유진 러브다이브')        
     
@@ -267,21 +263,5 @@ def main():
 main()
 
 
-import cv2
-cv2.startWindowThread()
-capture = cv2.VideoCapture('video/안유진 러브다이브.mp4')
-
-while capture.isOpened():
-    run, frame = capture.read()
-    if not run:
-        print("[프레임 수신 불가] - 종료합니다")
-        break
-    img = cv2.cvtColor(frame, cv2.IMREAD_COLOR)
-    cv2.imshow('video', frame)
-    if cv2.waitKey(30) & 0xFF == ord('q'):
-        break
-
-capture.release()
-cv2.destroyAllWindows()
 
 # %
