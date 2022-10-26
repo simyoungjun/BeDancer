@@ -1,0 +1,42 @@
+# Doc
+*.rtf
+*.txt
+*.pdf
+
+# Data
+*.zip
+*.tar
+
+*.csv
+*.arff
+*.xls
+*.xlsx
+*.json
+
+# Model
+
+# Img
+*.png
+*.jpg
+*.jpeg
+*.heic
+*.gif
+
+# Audio
+*.wav
+*.mp3
+*.midi
+
+# Video
+*.mp4
+*.mov
+*.wmw
+*.avi
+*.avchd
+*.mkv
+
+*.DS_Store
+
+!template/*
+!dataset/*
+!template/8_Just_DDance/*
