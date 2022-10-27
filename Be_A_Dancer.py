@@ -15,7 +15,7 @@ from multiprocessing import Process, Value, Array,freeze_support
 import threading
 import os
 #%%
-class JustDDance():
+class BeDancer():
     mp_drawing = mp.solutions.drawing_utils
     mp_drawing_style = mp.solutions.drawing_styles
     mp_pose = mp.solutions.pose
@@ -125,64 +125,66 @@ class JustDDance():
         with open(self.__keypoints_path+"/"+self.__dance_name+"_keypoints.json", "w") as keypoints:
             json.dump(keypoints_list, keypoints)
             
-    def error(self,user_image,dance_cors,pose_point,frame_num,acc):
-        print('자식 프로세스 pid : ',os.getpid())
-        print('자식 프로세스 frame num : ',frame_num.value)
-        
-        acc_per_frame = []
-        user_image = cv2.cvtColor(cv2.flip(user_image, 1), cv2.COLOR_BGR2RGB)
-        with self.mp_pose.Pose(model_complexity=2, min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
-            user_results = pose.process(user_image)
-            user_image = cv2.cvtColor(user_image, cv2.COLOR_RGB2BGR)
-            # 사용자
-            # self.mp_drawing.draw_landmarks(user_image, user_results.pose_landmarks, self.mp_pose.POSE_CONNECTIONS,
-            #                             landmark_drawing_spec = self.mp_drawing.DrawingSpec(color=(244, 244, 244), thickness=2, circle_radius=1),
-            #                             connection_drawing_spec = self.mp_drawing.DrawingSpec(color=(153, 255, 153), thickness=2, circle_radius=1))
-            try:
-                # user_input = {str(idx): [lmk.x, lmk.y, lmk.z] for idx, lmk in enumerate(user_results.pose_landmarks.landmark)}
-                user_input=np.array([[lmk.x, lmk.y, lmk.z] for lmk in user_results.pose_landmarks.landmark])
-            except: pass
-            # 추출해 온 데이터
-            try:
-                print('사용자 pose 추출')
-                # get coors MARGIN
-                cors_margin = self.__get_margin([user_input[0], user_input[23], user_input[24]], [dance_cors[frame_num.value][0], dance_cors[frame_num.value][23], dance_cors[frame_num.value][24]])
-                # pose_point = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
-                # x_cor_pose, y_cor_pose, z_cor_pose = int((dance_cors[frame_num.value][pose_point][0]+cors_margin[0])*user_image.shape[1]), int((dance_cors[frame_num.value][pose_point][1]+cors_margin[1])*user_image.shape[0]), int((dance_cors[frame_num][pose_point][2]+cors_margin[2])*1000)
-                # cv2.circle(user_image, (x_cor_pose, y_cor_pose), 8, (244, 244, 244), cv2.FILLED)
-                # L2 Norm
-                # acc_per_frame.append(np.round(self.__const_k / (np.linalg.norm([(x_cor_pose/user_image.shape[1]-cors_margin[0])-user_input[str(pose_point)][0], (y_cor_pose/user_image.shape[0]-cors_margin[1])-user_input[str(pose_point)][1], (z_cor_pose/1000-cors_margin[2])-user_input[str(pose_point)][2]]) + self.__const_k), 2))
-                
-                
-                print('np.mean(acc_per_frame)*100 : ',np.mean(cors_margin)*100)
-                acc.value = np.mean(cors_margin)*100
-                # self.__accumulate_acc.append(acc)
-                
-                print('자식 acc.value : ', acc.value)
-            except: pass       
             
-    def stack_userImg_with_pose(self, dance_image, user_image, dance_cors) :
-        coordinate_dance_pose = dance_cors[frame_num.value,:,:2]*np.array([dance_image.shape[1],dance_image.shape[1]])# 프레임 별 pose x,y 좌표* [width,height] 만큼 scaling
-        coordinate_dance_pose = np.asarray(coordinate_dance_pose, dtype = int) # pose 따라 line 그리기 위해 float -> int로 변환
-        # skeletons[pose_point] = (x_cor_pose, y_cor_pose)
-        self.__draw_skeleton(user_image, coordinate_dance_pose)
+    def accuracy_thread(self):
+        global continue_window
+        global frame_num
+        global dance_image
+        global user_image
+        global dance_pose
+        global accuracy
+        acc_per_frame = []
+        pose_point = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+        print('frame num : ',frame_num,' thread 계산')
         
-        while(1):
-            if current_time>1./FPS:
-                audio_frame, val = player.get_frame()
-                h_output = np.hstack((cv2.flip(dance_image, 1), user_image))
-                cv2.imshow("Just DDance!", h_output)
-                prev_time = time.time()
-                break
-            else:
-                current_time = time.time()-prev_time
-                print(current_time)
+        while frame_num < 0:
+            print('아직')
+            pass
         
-        if cv2.waitKey(1)==ord("q"):
-            break     
-    
-    def BeDancer(self):
-
+        while continue_window == True :
+            
+            print('frame num : ',frame_num,' thread 계산')
+            # user_image = cv2.cvtColor(cv2.flip(user_image, 1), cv2.COLOR_BGR2RGB) #이거 왜하는지?
+            # user_image = cv2.cvtColor(user_image, cv2.COLOR_BGR2RGB) #이거 왜하는지?
+            
+            with self.mp_pose.Pose(model_complexity=1, min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+                user_results = pose.process(user_image)
+                # user_image = cv2.cvtColor(user_image, cv2.COLOR_RGB2BGR)
+                # 사용자
+                # self.mp_drawing.draw_landmarks(user_image, user_results.pose_landmarks, self.mp_pose.POSE_CONNECTIONS,
+                #                             landmark_drawing_spec = self.mp_drawing.DrawingSpec(color=(244, 244, 244), thickness=2, circle_radius=1),
+                #                             connection_drawing_spec = self.mp_drawing.DrawingSpec(color=(153, 255, 153), thickness=2, circle_radius=1))
+                try:
+                    # user_input = {str(idx): [lmk.x, lmk.y, lmk.z] for idx, lmk in enumerate(user_results.pose_landmarks.landmark)}
+                    user_input=np.array([[lmk.x, lmk.y, lmk.z] for lmk in user_results.pose_landmarks.landmark])
+                except: pass
+                # 추출해 온 데이터
+                try:
+                    print('사용자 pose 추출')
+                    # get coors MARGIN
+                    cors_margin = self.__get_margin([user_input[0], user_input[23], user_input[24]], [dance_pose[frame_num][0], dance_pose[frame_num][23], dance_pose[frame_num][24]])
+                    # x_cor_pose, y_cor_pose, z_cor_pose = int((dance_pose[frame_num][pose_point][0]+cors_margin[0])*user_image.shape[1]), int((dance_pose[frame_num][pose_point][1]+cors_margin[1])*user_image.shape[0]), int((dance_pose[frame_num][pose_point][2]+cors_margin[2])*1000)
+                    # cv2.circle(user_image, (x_cor_pose, y_cor_pose), 8, (244, 244, 244), cv2.FILLED)
+                    # L2 Norm
+                    # acc_per_frame.append(np.round(self.__const_k / (np.linalg.norm([(x_cor_pose/user_image.shape[1]-cors_margin[0])-user_input[str(pose_point)][0], (y_cor_pose/user_image.shape[0]-cors_margin[1])-user_input[str(pose_point)][1], (z_cor_pose/1000-cors_margin[2])-user_input[str(pose_point)][2]]) + self.__const_k), 2))
+                    
+                    accuracy = np.mean(cors_margin)*100
+                    
+                    print('thread에서 계산한 frame_num,  accuracy : ', frame_num, ' ', accuracy)
+                    # self.__accumulate_acc.append(acc)
+                    
+                    # print('thread accuracy : ', accuracy)
+                except: pass       
+            
+    def play_dance(self):
+        #전역변수 선언
+        global continue_window
+        global frame_num
+        global dance_image
+        global user_image
+        global dance_pose
+        global accuracy
+        accuracy = 0
         
         cv2.startWindowThread()
         dance = cv2.VideoCapture(os.path.join(self.__video_download_path, self.__dance_name+".mp4"))
@@ -196,59 +198,72 @@ class JustDDance():
         
         player = MediaPlayer(os.path.join(self.__video_download_path, self.__dance_name+".mp4"))
         
-        Dance_pose = self.__load_cor_data() #안무영상 pose 상대좌표
+        dance_pose = self.__load_cor_data() #안무영상 pose 상대좌표 (전역변수 초기화)
         # skeletons = {}
-        prev_time = 0 # 출력 FPS 30으로 맞추기 위한 변수
         FPS = dance.get(cv2.CAP_PROP_FPS) # 안무영상(dance) frame rate
         pose_point = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32] #joint index
-        frame_num = Value('i',-1)
-        acc = Value('d',0)
-        child_process_end = Value('')
+        
+        frame_num = -1
+        acc_per_frame = 0
+        continue_window = user.isOpened()
         # with self.mp_pose.Pose(model_complexity=2, min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
         
-        process_list=[]
+        #Thread 실행
+        th = threading.Thread(target = self.accuracy_thread, name = 'thread')
+        th.start()
         
-        while user.isOpened():
-            frame_num.value+=1
+        prev_time = time.time() # 출력 FPS 30으로 맞추기 위한 변수 (이전 frame 출력시간)
+        while continue_window == True:
 
-            current_time = time.time()-prev_time
             user_ret, user_image = user.read()
             dance_ret, dance_image = dance.read()
+            frame_num += 1
+            
+            
             if not user_ret: break
             if not dance_ret: break
-    
+
+            coordinate_dance_pose = dance_pose[frame_num, :, :2]*np.array([dance_image.shape[1], dance_image.shape[1]])# 프레임 별 pose x,y 좌표* [width,height] 만큼 scaling
+            coordinate_dance_pose = np.asarray(coordinate_dance_pose, dtype = int) # pose 따라 line 그리기 위해 float -> int로 변환
+            # skeletons[pose_point] = (x_cor_pose, y_cor_pose)
+            self.__draw_skeleton(user_image, coordinate_dance_pose) # user image에 dance pose 그림
             
-                        #멀티 프로세스 분기
-            process = Process(target=self.error, args=[user_image,dance_cors, pose_point, frame_num, acc])
-            print('부모 프로세스 pid : ', os.getpid())
-            # process_list.append(process)
-            if (os.getpid())
-            process.start()
-            # process.join()
-            print('부모에서 frame num : ', frame_num.value)
-            print('부모에서 acc : ', acc.value)
-            print('자식 return 값 : ', process)
-            print('\n')
-             
-        for process in process_list:
-            process.join()
-            print(process.is_alive())
+            while(time.time()-prev_time < 1./FPS):
+                pass
+                
+            audio_frame, val = player.get_frame()
+            # h_output = np.hstack((cv2.flip(dance_image, 1), user_image))
+            # user_image = cv2.cvtColor(cv2.flip(user_image, 1), cv2.COLOR_BGR2RGB)
+            cv2.putText(user_image, str(accuracy)+"%", (20, 50), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=2, color=(0, 0, 255), thickness=2, lineType=cv2.LINE_AA)
             
-        cv2.putText(user_image, str(acc.value)+"%", (20, 50), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=2, color=(0, 0, 255), thickness=2, lineType=cv2.LINE_AA)
+            h_output = np.hstack((dance_image, user_image))
+            
+            cv2.imshow("Be a Dancer!", h_output)
+            prev_time = time.time()
+            
+            if cv2.waitKey(1)==ord("q"):
+                break 
+            
         
-        # process1.join()   
         player.close_player()
+        continue_window = False
         user.release() 
         dance.release()
         cv2.destroyAllWindows()
         cv2.waitKey(1)
+        th.join()
         
 
-
+global go
+global frame_num
+global dance_image
+global user_image
+global dance_pose
+global accuracy
     
 if __name__=='__main__':
     # freeze_support()
-    jd = JustDDance()
+    bd = BeDancer()
     # isDownload = input("영상을 다운 받아야하나요? (Y/N): ")
     # if isDownload.upper()=="Y":
     #     jd.download_video()
@@ -273,9 +288,8 @@ if __name__=='__main__':
     # print("실행 중입니다! 잠시만 기다려주세요! (실행 중 q를 누르면 종료됩니다)")
     
     
-    jd.set_dance_name('안유진 러브다이브')        
-    
-    jd.BeDancer()
+    bd.set_dance_name('안유진 러브다이브')        
+    bd.play_dance()
     # jd.print_dance_data()
     
 
