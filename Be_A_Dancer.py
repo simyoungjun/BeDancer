@@ -59,6 +59,7 @@ class BeDancer():
 
     
     def __draw_skeleton(self, image, skeleton):
+        
         # 오른쪽 스켈레톤 (붉은색)
         cv2.line(image, skeleton[12], skeleton[14], (102, 102, 255), thickness=7, lineType=cv2.LINE_AA, shift=None) # 오/어깨 -> 오/팔꿈치
         cv2.line(image, skeleton[14], skeleton[16], (102, 102, 255), thickness=7, lineType=cv2.LINE_AA, shift=None) # 오/팔꿈치 -> 오/손목
@@ -81,15 +82,6 @@ class BeDancer():
         cv2.line(image, skeleton[11], skeleton[12], (224, 224, 224), thickness=5, lineType=cv2.LINE_AA, shift=None)
         cv2.line(image, skeleton[23], skeleton[24], (224, 224, 224), thickness=5, lineType=cv2.LINE_AA, shift=None)   
         
-    def __get_margin(self, user_tri, dance_tri):
-        margin = []
-        ut = [(user_tri[0][0]+user_tri[1][0]+user_tri[2][0])/3, (user_tri[0][1]+user_tri[1][1]+user_tri[2][1])/3, (user_tri[0][2]+user_tri[1][2]+user_tri[2][2])/3]
-        dt = [(dance_tri[0][0]+dance_tri[1][0]+dance_tri[2][0])/3, (dance_tri[0][1]+dance_tri[1][1]+dance_tri[2][1])/3, (dance_tri[0][2]+dance_tri[1][2]+dance_tri[2][2])/3]
-        for u, d in zip(ut, dt): margin.append(u-d)
-        return margin
-    
-    def __get_distance(self, pt1, pt2):
-        return ((pt1[0]-pt2[0])**2 + (pt1[1]-pt2[1])**2)**0.5
     
     def __load_cor_data(self):
         with open(self.__keypoints_path+"/"+self.__dance_name+"_keypoints.json", "r") as keypoints:
@@ -123,14 +115,12 @@ class BeDancer():
             cap.release()
             cv2.destroyAllWindows()
             cv2.waitKey(1)
+            
         # Save coord. Data for json type
         with open(self.__keypoints_path+"/"+self.__dance_name+"_keypoints.json", "w") as keypoints:
             json.dump(keypoints_list, keypoints)
             
-    # def unit_vector(self, dancer_landmarks, user_landmarks, land_index):
-    #     vector = dancer_landmarks[land_index] - user_landmarks[land_index]
-    #     unit_vector = vector/np.sqrt(np.sum(vector**2))
-    #     return unit_vector
+
     
     def unit_vector(self, landmarks):
         x = [12, 14, 12, 24, 26, 28, 30, 28, 11, 13, 11, 23, 25, 27, 29, 27, 11, 23]
@@ -149,15 +139,14 @@ class BeDancer():
         global accuracy
         acc_per_frame = []
         pose_point = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
-        print('frame num : ',frame_num,' thread 계산')
+        # print('frame num : ',frame_num,' thread 계산')
         
         while frame_num < 0:
-            print('아직')
             pass
         
         while continue_window == True :
             
-            print('frame num : ',frame_num,' thread 계산')
+            # print('frame num : ',frame_num,' thread 계산')
             # user_image = cv2.cvtColor(cv2.flip(user_image, 1), cv2.COLOR_BGR2RGB) #이거 왜하는지?
             # user_image = cv2.cvtColor(user_image, cv2.COLOR_BGR2RGB) #이거 왜하는지?
             
@@ -173,25 +162,14 @@ class BeDancer():
                 # if cv2.waitKey(1)==ord("q"): break
                 
                 try:
-                    # user_input = {str(idx): [lmk.x, lmk.y, lmk.z] for idx, lmk in enumerate(user_results.pose_landmarks.landmark)}
                     user_pose=np.array([[lmk.x, lmk.y, lmk.z] for lmk in user_results.pose_landmarks.landmark])
                 except: pass  
                 
                 # 추출해 온 데이터
-                print('사용자 pose 추출')
+                # print('사용자 pose 추출')
                 accuracy = np.sum(np.abs(self.unit_vector(dance_pose) - self.unit_vector(user_pose)))
-                
-                # get coors MARGIN
-                # cors_margin = self.__get_margin([user_input[0], user_input[23], user_input[24]], [dance_pose[frame_num][0], dance_pose[frame_num][23], dance_pose[frame_num][24]])
-                # x_cor_pose, y_cor_pose, z_cor_pose = int((dance_pose[frame_num][pose_point][0]+cors_margin[0])*user_image.shape[1]), int((dance_pose[frame_num][pose_point][1]+cors_margin[1])*user_image.shape[0]), int((dance_pose[frame_num][pose_point][2]+cors_margin[2])*1000)
-                # cv2.circle(user_image, (x_cor_pose, y_cor_pose), 8, (244, 244, 244), cv2.FILLED)
-                # L2 Norm
-                # acc_per_frame.append(np.round(self.__const_k / (np.linalg.norm([(x_cor_pose/user_image.shape[1]-cors_margin[0])-user_input[str(pose_point)][0], (y_cor_pose/user_image.shape[0]-cors_margin[1])-user_input[str(pose_point)][1], (z_cor_pose/1000-cors_margin[2])-user_input[str(pose_point)][2]]) + self.__const_k), 2))
-                
-                print('thread에서 계산한 frame_num,  accuracy : ', frame_num, ' ', accuracy)
-                # self.__accumulate_acc.append(acc)
-                
-                # print('thread accuracy : ', accuracy)
+
+                # print('thread에서 계산한 frame_num,  accuracy : ', frame_num, ' ', accuracy)
             
     def play_dance(self):
         #전역변수 선언
@@ -244,7 +222,7 @@ class BeDancer():
             if not user_ret: break
             if not dance_ret: break
 
-            coordinate_dance_pose = dance_poses[frame_num, :, :2] * np.array([dance_image.shape[1], dance_image.shape[0]])# 프레임 별 pose x,y 좌표* [width,height] 만큼 scaling
+            coordinate_dance_pose = dance_poses[frame_num, :, :2] * np.array([dance_image.shape[1], dance_image.shape[0]]) + (user_image.shape[1] - dance_image.shape[1])/2# 프레임 별 pose x,y 좌표* [width,height] 만큼 scaling
             coordinate_dance_pose = np.asarray(coordinate_dance_pose, dtype = int) # pose 따라 line 그리기 위해 float -> int로 변환
             # skeletons[pose_point] = (x_cor_pose, y_cor_pose)
             self.__draw_skeleton(user_image, coordinate_dance_pose) # user image에 dance pose 그림
@@ -264,7 +242,6 @@ class BeDancer():
             
             if cv2.waitKey(1)==ord("q"):
                 break 
-            
         
         player.close_player()
         continue_window = False
