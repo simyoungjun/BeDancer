@@ -284,7 +284,7 @@ class BeDancer():
             audio_frame, val = player.get_frame()
             # h_output = np.hstack((cv2.flip(dance_image, 1), user_image))
             # user_image = cv2.cvtColor(cv2.flip(user_image, 1), cv2.COLOR_BGR2RGB)
-            cv2.putText(user_image_drawed, str(accuracy)+"%", (20, 50), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=2, color=(0, 0, 255), thickness=2, lineType=cv2.LINE_AA)
+            cv2.putText(user_image_drawed, 'Score : '+str(accuracy), (20, 50), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=2, color=(0, 0, 255), thickness=2, lineType=cv2.LINE_AA)
             
             output = np.hstack((cropped_dance_image, user_image_drawed))
             
