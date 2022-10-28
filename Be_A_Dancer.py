@@ -255,7 +255,7 @@ class BeDancer():
             lock.acquire() 
             frame_num += 1
             dance_ret, dance_image = dance.read()
-            dance_image = self.crop_image_width(dance_image,560)
+            cropped_dance_image = self.crop_image_width(dance_image,560)
 
             user_ret, user_image = user.read()
             if self.isMirr ==False:
@@ -286,7 +286,7 @@ class BeDancer():
             # user_image = cv2.cvtColor(cv2.flip(user_image, 1), cv2.COLOR_BGR2RGB)
             cv2.putText(user_image_drawed, str(accuracy)+"%", (20, 50), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=2, color=(0, 0, 255), thickness=2, lineType=cv2.LINE_AA)
             
-            output = np.hstack((dance_image, user_image_drawed))
+            output = np.hstack((cropped_dance_image, user_image_drawed))
             
             cv2.imshow("Be a Dancer!", output)
             prev_time = time.time()
