@@ -202,7 +202,7 @@ class BeDancer():
                     # 추출해 온 데이터
                     # print('사용자 pose 추출')
                     norm2_of_unit_vectors = self.norm2(self.unit_vector(dance_landmarks_thread) - self.unit_vector(user_landmarks_thread))
-                    accuracy = int(np.sum(norm2_of_unit_vectors) / (2 * norm2_of_unit_vectors.shape[0]) * 100)
+                    accuracy = 100 - int(np.sum(norm2_of_unit_vectors) / (2 * norm2_of_unit_vectors.shape[0]) * 100)
                     # accuracy = int(np.sum(np.abs(self.unit_vector(dance_landmarks_thread) - self.unit_vector(user_landmarks_thread))))
 
                     # print('thread에서 계산한 frame_num,  accuracy : ', frame_num, ' ', accuracy)
