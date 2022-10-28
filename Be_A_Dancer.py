@@ -25,7 +25,9 @@ class BeDancer():
         self.__keypoints_path = "keypoints"
         self.__dance_name = None
         self.__accumulate_acc = []
-        self.isMirr=False
+        self.speed = 1
+        self.isMirr = True
+        
     def set_const_k(self):
         self.__const_k = float(input("난이도 조절(0~1 사이 값): "))
     def get_const_k(self):
@@ -89,7 +91,7 @@ class BeDancer():
             data = json.load(keypoints)
             return np.array(data)
         
-    def extract_keypoints(self, isMirr=False, showExtract=False):
+    def extract_keypoints(self, isMirr=True, showExtract=False):
         if not os.path.exists(self.__keypoints_path): os.mkdir(self.__keypoints_path)
         
         keypoints_list = []
@@ -101,7 +103,7 @@ class BeDancer():
             while cap.isOpened():
                 ret, image = cap.read()
                 if not ret: break
-                if not isMirr == True:
+                if isMirr == False:
                     dance_image = cv2.flip(image, 1)
                 
                 results = pose.process(image)
@@ -141,6 +143,15 @@ class BeDancer():
     
     def scoring(self,dancer_unit_vectors,user_unit_vectors):
         accuracy = int(np.sum(np.abs(self.unit_vector(dancer_unit_vectors) - self.unit_vector(user_unit_vectors))))
+    
+    def crop_image_width(self,image, width_after_crop):
+        image_width = image.shape[1]
+        width_after_crop=560
+        if image_width>width_after_crop:
+            mid = image_width//2
+            return image[: , mid - width_after_crop // 2 : mid + width_after_crop // 2]
+        else:
+            return image
         
     def accuracy_thread(self):
         global continue_window
@@ -150,19 +161,15 @@ class BeDancer():
         global dance_pose
         global accuracy
         global lock
-        acc_per_frame = []
-        pose_point = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
-        # print('frame num : ',frame_num,' thread 계산')
         
         while frame_num < 0:
             pass
         
         print(frame_num)
         
+        cv2.startWindowThread()
+        
         while continue_window == True :
-            
-            # print('frame num : ',frame_num,' thread 계산')
-            # user_image = cv2.cvtColor(user_image, cv2.COLOR_BGR2RGB) #이거 왜하는지?
             
             lock.acquire()
             with self.mp_pose.Pose(model_complexity=2, min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
@@ -172,39 +179,36 @@ class BeDancer():
                 lock.release()
                 
                 user_results = pose.process(user_image_thread)
-                # user_image = cv2.cvtColor(user_image, cv2.COLOR_RGB2BGR)
-                # 사용자
-                # self.mp_drawing.draw_landmarks(user_image_thread, user_landmarks_thread.pose_landmarks, self.mp_pose.POSE_CONNECTIONS,
-                #                             landmark_drawing_spec = self.mp_drawing.DrawingSpec(color=(244, 244, 244), thickness=2, circle_radius=1),
-                #                             connection_drawing_spec = self.mp_drawing.DrawingSpec(color=(153, 255, 153), thickness=2, circle_radius=1))
                 
                 
                 try:
                     user_landmarks_thread=np.array([[lmk.x, lmk.y, lmk.z] for lmk in user_results.pose_landmarks.landmark])
-                except: pass  
                 
                 
-                #error 계산할때 사용되는 image와 dance pose
-                coordinate_dance_pose = self.normalized_to_coordinate(dance_landmarks_thread,dance_image_thread.shape)
-                self.__draw_skeleton(dance_image_thread, coordinate_dance_pose) # user image에 dance pose 그림
+                    #error 계산할때 사용되는 image와 dance pose
+                    coordinate_dance_pose = self.normalized_to_coordinate(dance_landmarks_thread, dance_image_thread.shape)
+                    self.__draw_skeleton(dance_image_thread, coordinate_dance_pose) # user image에 dance pose 그림
+                    
+                    coordinate_user_pose =self.normalized_to_coordinate(user_landmarks_thread, user_image_thread.shape)
+                    self.__draw_skeleton(user_image_thread, coordinate_user_pose)
+                    
+                    thread_dancerANDuser_with_landmarks =np.hstack((dance_image_thread, user_image_thread))
+                    cv2.imshow("Extracting", thread_dancerANDuser_with_landmarks)
+                    
+                    if cv2.waitKey(1)==ord("q"): break
                 
-                coordinate_user_pose =self.normalized_to_coordinate(user_landmarks_thread,user_image_thread.shape)
-                self.__draw_skeleton(user_image_thread, coordinate_user_pose)
-                
-                thread_dancerANDuser_with_landmarks =np.hstack((dance_image_thread,user_image_thread))
-                cv2.imshow("Extracting", thread_dancerANDuser_with_landmarks)
-                
-                if cv2.waitKey(1)==ord("q"): break
                 
                 
-                # 추출해 온 데이터
-                # print('사용자 pose 추출')
-                norm2_of_unit_vectors = self.norm2(self.unit_vector(dance_landmarks_thread) - self.unit_vector(user_landmarks_thread))
-                accuracy = int(np.sum(norm2_of_unit_vectors) / (2 * norm2_of_unit_vectors.shape[0]))
-                # accuracy = int(np.sum(np.abs(self.unit_vector(dance_landmarks_thread) - self.unit_vector(user_landmarks_thread))))
+                    # 추출해 온 데이터
+                    # print('사용자 pose 추출')
+                    norm2_of_unit_vectors = self.norm2(self.unit_vector(dance_landmarks_thread) - self.unit_vector(user_landmarks_thread))
+                    accuracy = int(np.sum(norm2_of_unit_vectors) / (2 * norm2_of_unit_vectors.shape[0]) * 100)
+                    # accuracy = int(np.sum(np.abs(self.unit_vector(dance_landmarks_thread) - self.unit_vector(user_landmarks_thread))))
 
-                print('thread에서 계산한 frame_num,  accuracy : ', frame_num, ' ', accuracy)
-            
+                    # print('thread에서 계산한 frame_num,  accuracy : ', frame_num, ' ', accuracy)
+                except: pass  
+
+    
     def play_dance(self):
         #전역변수 선언
         global continue_window
@@ -214,17 +218,18 @@ class BeDancer():
         global dance_pose
         global accuracy
         global lock
-        accuracy = 0
+        accuracy=0
+        
         
         lock = threading.Lock()
         
-        cv2.startWindowThread()
+        # cv2.startWindowThread()
         dance = cv2.VideoCapture(os.path.join(self.__video_download_path, self.__dance_name+".mp4"))
         # user = cv2.VideoCapture('C:/Users/sim/Downloads/Just-DDance-main/video/제니 솔로.mp4')
-        user = cv2.VideoCapture(os.path.join(self.__video_download_path, self.__dance_name+".mp4"))
+        user = cv2.VideoCapture(os.path.join(self.__video_download_path,"러브다이브.mp4"))
         # try: user = cv2.VideoCapture(0)
         # except: user = cv2.VideoCapture(1)
-        
+
         user.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         user.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         
@@ -250,34 +255,40 @@ class BeDancer():
             lock.acquire() 
             frame_num += 1
             dance_ret, dance_image = dance.read()
-            if self.isMirr ==True:
-                dance_image = cv2.flip(dance_image, 1)
+            dance_image = self.crop_image_width(dance_image,560)
+
             user_ret, user_image = user.read()
-            dance_pose = dance_poses[frame_num]
+            if self.isMirr ==False:
+                dance_image = cv2.flip(dance_image, 1)
+            user_image = cv2.flip(user_image, 1)
+            
+            try:
+                dance_pose = dance_poses[frame_num]
+            except: break
+            
             if not user_ret: break
             if not dance_ret: break
             lock.release()
 
 
-            # user_image = cv2.flip(user_image, 1) 
-
-            coordinate_dance_pose = self.normalized_to_coordinate(dance_pose,dance_image.shape) + (user_image.shape[1] - dance_image.shape[1]) # normalized 포즈 좌표로 변환후 user image의 중앙에 배치
+            coordinate_dance_pose = self.normalized_to_coordinate(dance_pose,dance_image.shape) + [(user_image.shape[1] - dance_image.shape[1]) // 2, 0] # normalized 포즈 좌표로 변환후 user image의 중앙에 배치
             # coordinate_dance_pose = dance_pose[:, :2] * np.array([dance_image.shape[1], dance_image.shape[0]]) + (user_image.shape[1] - dance_image.shape[1])/2# 프레임 별 pose x,y 좌표* [width,height] 만큼 scaling
             # coordinate_dance_pose = np.asarray(coordinate_dance_pose, dtype = int) # pose 따라 line 그리기 위해 float -> int로 변환
 
-            self.__draw_skeleton(user_image, coordinate_dance_pose) # user image에 dance pose 그림
+            user_image_drawed = user_image.copy()
+            self.__draw_skeleton(user_image_drawed, coordinate_dance_pose) # user image에 dance pose 그림
             
-            while(time.time()-prev_time < 1./FPS):
+            while(time.time()-prev_time < float(bd.speed)/FPS):
                 pass
                 
             audio_frame, val = player.get_frame()
             # h_output = np.hstack((cv2.flip(dance_image, 1), user_image))
             # user_image = cv2.cvtColor(cv2.flip(user_image, 1), cv2.COLOR_BGR2RGB)
-            cv2.putText(user_image, str(accuracy)+"%", (20, 50), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=2, color=(0, 0, 255), thickness=2, lineType=cv2.LINE_AA)
+            cv2.putText(user_image_drawed, str(accuracy)+"%", (20, 50), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=2, color=(0, 0, 255), thickness=2, lineType=cv2.LINE_AA)
             
-            h_output = np.hstack((dance_image, user_image))
+            output = np.hstack((dance_image, user_image_drawed))
             
-            cv2.imshow("Be a Dancer!", h_output)
+            cv2.imshow("Be a Dancer!", output)
             prev_time = time.time()
             
             
@@ -320,14 +331,15 @@ if __name__=='__main__':
     #     isKeypoint = input("키포인트를 추출했었나요? (Y/N): ")
     #     if isKeypoint.upper()=="Y":
     #         pass
+
     #     else: 
     #         isk = input("키포인트 출력 과정을 보고 싶나요? (Y/N): ")
     #         print("키 포인트 추출이 좀 오래걸립니다! (영상길이+a)")
     #         bd.extract_keypoints(isMirr=True, showExtract=True)
     # print("실행 중입니다! 잠시만 기다려주세요! (실행 중 q를 누르면 종료됩니다)")
     
-    
-    bd.set_dance_name('안유진 러브다이브')        
+    # bd.speed = input("몇 배속으로 하시겠습니까? (type: float): ")
+    bd.set_dance_name('솔로')        
     bd.play_dance()
     # jd.print_dance_data()
     
