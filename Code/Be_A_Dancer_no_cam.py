@@ -253,24 +253,29 @@ class BeDancer():
         while continue_window == True:
 
             lock.acquire() 
-            frame_num += 1
-            dance_ret, dance_image = dance.read()
-            cropped_dance_image = self.crop_image_width(dance_image,560)
-
+            if frame_num > 300:
+                pass
+            else:
+                frame_num += 1
+                dance_ret, dance_image = dance.read()
+                cropped_dance_image = self.crop_image_width(dance_image,560)
+                if self.isMirr ==False:
+                    dance_image = cv2.flip(dance_image, 1)
+                try:
+                    dance_pose = dance_poses[frame_num]
+                except: break
+                
+                
             user_ret, user_image = user.read()
-            if self.isMirr ==False:
-                dance_image = cv2.flip(dance_image, 1)
             user_image = cv2.flip(user_image, 1)
-            
-            try:
-                dance_pose = dance_poses[frame_num]
-            except: break
+        
             
             if not user_ret: break
             if not dance_ret: break
             lock.release()
 
 
+            
             coordinate_dance_pose = self.normalized_to_coordinate(dance_pose,dance_image.shape) + [(user_image.shape[1] - dance_image.shape[1]) // 2, 0] # normalized 포즈 좌표로 변환후 user image의 중앙에 배치
             # coordinate_dance_pose = dance_pose[:, :2] * np.array([dance_image.shape[1], dance_image.shape[0]]) + (user_image.shape[1] - dance_image.shape[1])/2# 프레임 별 pose x,y 좌표* [width,height] 만큼 scaling
             # coordinate_dance_pose = np.asarray(coordinate_dance_pose, dtype = int) # pose 따라 line 그리기 위해 float -> int로 변환
@@ -310,36 +315,35 @@ class BeDancer():
 # global user_image
 # global dance_pose
 # global accuracy
-    
 if __name__=='__main__':
     # freeze_support()
     bd = BeDancer()
-    # isDownload = input("영상을 다운 받아야하나요? (Y/N): ")
-    # if isDownload.upper()=="Y":
-    #     bd.download_video()
-    #     ism = input("영상이 거울 모드인가요? (Y/N): ")
-    #     isk = input("키포인트 출력 과정을 보고 싶나요? (Y/N): ")
-    #     if ism.upper()=="Y": ism=True
-    #     else: ism=False
-    #     if isk.upper()=="Y": isk=True
-    #     else: isk=False
-    #     print("키 포인트 추출이 좀 오래걸립니다! (영상길이+a)")
-    #     bd.extract_keypoints(ism, isk)
-    # else:
-    #     n = input("다운 받은 영상의 이름이 뭔가요?: ")
-    #     bd.set_dance_name(n)        
-    #     isKeypoint = input("키포인트를 추출했었나요? (Y/N): ")
-    #     if isKeypoint.upper()=="Y":
-    #         pass
+    isDownload = input("영상을 다운 받아야하나요? (Y/N): ")
+    if isDownload.upper()=="Y":
+        bd.download_video()
+        ism = input("영상이 거울 모드인가요? (Y/N): ")
+        isk = input("키포인트 출력 과정을 보고 싶나요? (Y/N): ")
+        if ism.upper()=="Y": ism=True
+        else: ism=False
+        if isk.upper()=="Y": isk=True
+        else: isk=False
+        print("키 포인트 추출이 좀 오래걸립니다! (영상길이+a)")
+        bd.extract_keypoints(ism, isk)
+    else:
+        n = input("다운 받은 영상의 이름이 뭔가요?: ")
+        bd.set_dance_name(n)        
+        isKeypoint = input("키포인트를 추출했었나요? (Y/N): ")
+        if isKeypoint.upper()=="Y":
+            pass
 
-    #     else: 
-    #         isk = input("키포인트 출력 과정을 보고 싶나요? (Y/N): ")
-    #         print("키 포인트 추출이 좀 오래걸립니다! (영상길이+a)")
-    #         bd.extract_keypoints(isMirr=True, showExtract=True)
-    # print("실행 중입니다! 잠시만 기다려주세요! (실행 중 q를 누르면 종료됩니다)")
+        else: 
+            isk = input("키포인트 출력 과정을 보고 싶나요? (Y/N): ")
+            print("키 포인트 추출이 좀 오래걸립니다! (영상길이+a)")
+            bd.extract_keypoints(isMirr=True, showExtract=True)
+    print("실행 중입니다! 잠시만 기다려주세요! (실행 중 q를 누르면 종료됩니다)")
     
-    # bd.speed = input("몇 배속으로 하시겠습니까? (type: float): ")
-    bd.set_dance_name('솔로')        
+    bd.speed = input("몇 배속으로 하시겠습니까? (type: float): ")
+    bd.set_dance_name('러브다이브')        
     bd.play_dance()
     # jd.print_dance_data()
     
