@@ -274,18 +274,23 @@ class BeDancer():
         while continue_window == True:
 
             lock.acquire() 
-            frame_num += 1
-            dance_ret, dance_image = dance.read()
-            cropped_dance_image = self.crop_image_width(dance_image,560)
-
-            user_ret, user_image = user.read()
-            if self.isMirr ==False:
-                dance_image = cv2.flip(dance_image, 1)
-            user_image = cv2.flip(user_image, 1)
+            if frame_num > 300:
+                pass
             
-            try:
-                dance_pose = dance_poses[frame_num]
-            except: break
+            else:
+                frame_num += 1
+                dance_ret, dance_image = dance.read()
+                cropped_dance_image = self.crop_image_width(dance_image,560)
+                if self.isMirr ==False:
+                    dance_image = cv2.flip(dance_image, 1)
+                try:
+                    dance_pose = dance_poses[frame_num]
+                except: break
+                
+                
+            user_ret, user_image = user.read()
+            # user_image = cv2.flip(user_image, 1)
+        
             
             if not user_ret: break
             if not dance_ret: break
