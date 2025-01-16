@@ -22,7 +22,7 @@ This project presents an adaptable dance practice system powered by deep learnin
 ### **System Flow**
 | **System Flowchart** |
 |-----------------------|
-| <p align="center"><img src="images/flow.png" alt="System Flowchart" width="50%"></p> |
+| <p align="center"><img src="images/flow.png" alt="System Flowchart" width="65%"></p> |
 
 1. Download any choreography video using the crawling feature.
 2. Extract keypoints for each frame of the video using BlazePose.
