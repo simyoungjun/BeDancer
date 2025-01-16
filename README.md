@@ -22,7 +22,7 @@ This project presents an adaptable dance practice system powered by deep learnin
 ### **System Flow**
 | **System Flowchart** |
 |-----------------------|
-| ![System Flowchart](images/flow.png) |
+| <img src="images/flow.png" alt="System Flowchart" width="70%"> |
 
 1. Download any choreography video using the crawling feature.
 2. Extract keypoints for each frame of the video using BlazePose.
@@ -42,7 +42,7 @@ This project presents an adaptable dance practice system powered by deep learnin
 
 | **Threading Workflow** |
 |-------------------------|
-| ![Threading Workflow](images/thread_table.png) |
+| <img src="images/thread_table.png" alt="Threading Workflow" width="60%"> |
 
 ---
 
@@ -71,6 +71,7 @@ This project presents an adaptable dance practice system powered by deep learnin
 - Implement pose correction feedback to improve learning outcomes.
 - Further optimize for ultra-low-resource devices or embedded systems.
 
----
+### **References**
+- MediaPipe BlazePose: [BlazePose Documentation]([https://github.com/tensorflow/tfjs-models/tree/master/pose-detection/src/blazepose_mediapipe])
+- Choreography example: ["LOVE DIVE" Dance Performance](https://www.youtube.com/watch?v=IIdOKj-hWAY)
 
-This system empowers dancers of all levels to practice their favorite choreographies with precision and efficiency. Feel free to contribute, suggest improvements, or raise issues for further development!
