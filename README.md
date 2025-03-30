@@ -1,4 +1,4 @@
-# Dance Practice System Using Deep Learning Pose Estimation
+# Dance Practice System Using Deep Learning Pose Estimation with Multithreading
 
 ---
 
